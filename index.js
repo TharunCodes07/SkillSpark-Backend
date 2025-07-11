@@ -121,7 +121,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
 app.use("*", (req, res) => {
   appLogger.warn("Route not found", {
     method: req.method,
