@@ -2,11 +2,10 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { body, validationResult } from "express-validator";
 
-// Rate limiting configuration
 export const createRateLimiter = (options = {}) => {
   return rateLimit({
-    windowMs: options.windowMs || 15 * 60 * 1000, // 15 minutes
-    max: options.max || 100, // limit each IP to 100 requests per windowMs
+    windowMs: options.windowMs || 15 * 60 * 1000,
+    max: options.max || 100,
     message: {
       success: false,
       error: {
@@ -15,29 +14,27 @@ export const createRateLimiter = (options = {}) => {
         details: "Rate limit exceeded",
       },
     },
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    standardHeaders: true,
+    legacyHeaders: false,
     ...options,
   });
 };
 
-// Specific rate limiters for different endpoints
 export const generalLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per 15 minutes
+  windowMs: 15 * 60 * 1000,
+  max: 100,
 });
 
 export const roadmapLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // 5 roadmap requests per minute (as they are expensive)
+  windowMs: 60 * 1000,
+  max: 5,
 });
 
 export const playlistLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 playlist requests per minute
+  windowMs: 60 * 1000,
+  max: 10,
 });
 
-// Helmet configuration for security headers
 export const helmetConfig = helmet({
   contentSecurityPolicy: {
     directives: {
@@ -56,7 +53,7 @@ export const helmetConfig = helmet({
       frameSrc: ["'none'"],
     },
   },
-  crossOriginEmbedderPolicy: false, // Disable for API compatibility
+  crossOriginEmbedderPolicy: false,
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
@@ -64,7 +61,6 @@ export const helmetConfig = helmet({
   },
 });
 
-// Simple input validation middleware - just basic length checks
 export const validateRoadmapInput = [
   body("topic")
     .trim()
@@ -141,9 +137,7 @@ export const validatePlaylistInput = [
   },
 ];
 
-// Request sanitization middleware
 export const sanitizeRequest = (req, res, next) => {
-  // Remove any null bytes from request body
   if (req.body) {
     const sanitize = (obj) => {
       for (const key in obj) {

@@ -17,10 +17,6 @@ import { appLogger } from "../utils/logger.js";
 
 const router = express.Router();
 
-/**
- * POST /api/playlists/generate
- * Generate YouTube playlists for a specific learning point
- */
 router.post(
   "/generate",
   playlistLimiter,
@@ -29,7 +25,6 @@ router.post(
     const startTime = Date.now();
 
     try {
-      // Validate request body
       const { topic, pointTitle, userPreferences } = validatePlaylistRequest(
         req.body
       );
@@ -42,14 +37,12 @@ router.post(
         userAgent: req.get("user-agent"),
       });
 
-      // Generate video titles using Gemini
       const videoTitles = await geminiService.generateVideoTitles(
         topic,
         pointTitle,
         userPreferences
       );
 
-      // Search for actual YouTube videos
       const playlists = [];
       let successCount = 0;
 
@@ -76,7 +69,6 @@ router.post(
             pointTitle,
             ip: req.ip,
           });
-          // Continue with other videos even if one fails
         }
       }
 
@@ -91,7 +83,6 @@ router.post(
         ip: req.ip,
       });
 
-      // Return results even if some videos couldn't be found
       const response = new PlaylistSuccessResponse(playlists);
       res.json(response);
     } catch (error) {

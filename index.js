@@ -18,10 +18,8 @@ import {
 } from "./src/utils/logger.js";
 import { validateEnvironmentVariables } from "./src/utils/helpers.js";
 
-// Load environment variables
 dotenv.config();
 
-// Validate required environment variables
 try {
   validateEnvironmentVariables(["GEMINI_API_KEY", "YOUTUBE_API_KEY"]);
 } catch (error) {
@@ -33,18 +31,15 @@ const app = express();
 const PORT = process.env.PORT || 8001;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
-// Trust proxy if behind reverse proxy (for rate limiting and IP detection)
 app.set("trust proxy", 1);
 
-// Security middleware
 app.use(helmetConfig);
-app.use(compression()); // Compress responses
+app.use(compression());
 
-// CORS configuration
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
-    : true, // Allow all origins in development
+    : true,
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -53,27 +48,22 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Request processing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(requestTimer);
 app.use(sanitizeRequest);
 
-// Logging middleware
 if (NODE_ENV === "production") {
   app.use(productionLogger);
 } else {
   app.use(developmentLogger);
 }
 
-// Rate limiting
 app.use(generalLimiter);
 
-// Routes
 app.use("/api/roadmaps", roadmapRoutes);
 app.use("/api/playlists", playlistRoutes);
 
-// Health check endpoint
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
@@ -84,7 +74,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// API status endpoint
 app.get("/api/status", (req, res) => {
   res.json({
     success: true,
@@ -99,7 +88,6 @@ app.get("/api/status", (req, res) => {
   });
 });
 
-// Error handling middleware
 app.use(errorLogger);
 app.use((err, req, res, next) => {
   appLogger.error("Unhandled error", err, {
@@ -139,7 +127,6 @@ app.use("*", (req, res) => {
   });
 });
 
-// Graceful shutdown handling
 process.on("SIGTERM", () => {
   appLogger.info("SIGTERM received, shutting down gracefully");
   process.exit(0);
@@ -161,7 +148,6 @@ app.listen(PORT, "0.0.0.0", () => {
     timestamp: new Date().toISOString(),
   });
 
-  // Test logging immediately
   appLogger.info("Testing logging system", { test: true });
 });
 

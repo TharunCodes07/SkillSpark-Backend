@@ -22,10 +22,6 @@ import { appLogger } from "../utils/logger.js";
 
 const router = express.Router();
 
-/**
- * POST /api/roadmaps/generate
- * Generate a learning roadmap for a given topic
- */
 router.post(
   "/generate",
   roadmapLimiter,
@@ -34,7 +30,6 @@ router.post(
     const startTime = Date.now();
 
     try {
-      // Validate request body
       const { topic, userPreferences } = validateRoadmapRequest(req.body);
 
       appLogger.info("Generating roadmap", {
@@ -44,7 +39,6 @@ router.post(
         userAgent: req.get("user-agent"),
       });
 
-      // Generate roadmap using Gemini
       const roadmapData = await geminiService.generateRoadmap(
         topic,
         userPreferences
@@ -53,11 +47,9 @@ router.post(
       const extractedTopic = roadmapData.extractedTopic || "programming";
       const roadmap = roadmapData.roadmap || {};
 
-      // Transform the data to the required format
       const points = [];
       let order = 1;
 
-      // Process each level
       for (const level of ["beginner", "intermediate", "advanced"]) {
         if (roadmap[level] && Array.isArray(roadmap[level])) {
           for (const pointTitle of roadmap[level]) {
@@ -76,10 +68,8 @@ router.post(
         }
       }
 
-      // Generate timestamps
       const timestamp = getCurrentTimestamp();
 
-      // Create the response structure
       const roadmapResponse = new SuccessResponse(
         new RoadmapDataResponse({
           id: generateId("roadmap"),
