@@ -17,6 +17,24 @@ import { appLogger } from "../utils/logger.js";
 
 const router = express.Router();
 
+// Helper method to generate fallback titles
+const generateFallbackTitles = async (
+  topic,
+  pointTitle,
+  userPreferences,
+  usedVideoIds
+) => {
+  const fallbackPatterns = [
+    `${pointTitle} ${topic} tutorial`,
+    `Learn ${pointTitle} in ${topic}`,
+    `${topic} ${pointTitle} complete guide`,
+    `${pointTitle} for ${topic} developers`,
+    `${topic} ${pointTitle} step by step`,
+  ];
+
+  return fallbackPatterns;
+};
+
 router.post(
   "/generate",
   playlistLimiter,
@@ -43,32 +61,89 @@ router.post(
         userPreferences
       );
 
+      appLogger.info("Generated video titles", {
+        topic,
+        pointTitle,
+        titlesCount: videoTitles.length,
+        titles: videoTitles,
+        ip: req.ip,
+      });
+
+      // Use the improved searchMultipleVideos method
+      const videoResults = await youtubeService.searchMultipleVideos(
+        videoTitles,
+        userPreferences
+      );
+
       const playlists = [];
-      let successCount = 0;
+      const usedVideoIds = new Set();
+      const usedTitles = new Set();
 
-      for (let i = 0; i < videoTitles.length; i++) {
-        const title = videoTitles[i];
-        try {
-          const result = await youtubeService.searchVideoByTitle(title);
+      for (const result of videoResults) {
+        // Additional deduplication check
+        if (
+          !usedVideoIds.has(result.videoId) &&
+          !usedTitles.has(result.title.toLowerCase())
+        ) {
+          const playlistItem = new PlaylistItem({
+            id: generateId("playlist"),
+            title: result.title,
+            videoUrl: `https://youtube.com/watch?v=${result.videoId}`,
+            duration: result.duration || "N/A",
+            durationMinutes: result.durationMinutes || null,
+            description: result.description || "No description available",
+            channelTitle: result.channelTitle || null,
+            publishedAt: result.publishedAt || null,
+          });
 
-          if (result) {
+          playlists.push(playlistItem);
+          usedVideoIds.add(result.videoId);
+          usedTitles.add(result.title.toLowerCase());
+        }
+      }
+
+      // If we don't have enough videos, try with fallback search terms
+      if (playlists.length < 3) {
+        appLogger.info("Insufficient videos found, trying fallback search", {
+          topic,
+          pointTitle,
+          currentCount: playlists.length,
+          ip: req.ip,
+        });
+
+        const fallbackTitles = await generateFallbackTitles(
+          topic,
+          pointTitle,
+          userPreferences,
+          usedVideoIds
+        );
+
+        const fallbackResults = await youtubeService.searchMultipleVideos(
+          fallbackTitles,
+          userPreferences
+        );
+
+        for (const result of fallbackResults) {
+          if (
+            !usedVideoIds.has(result.videoId) &&
+            !usedTitles.has(result.title.toLowerCase()) &&
+            playlists.length < 5
+          ) {
             const playlistItem = new PlaylistItem({
               id: generateId("playlist"),
               title: result.title,
               videoUrl: `https://youtube.com/watch?v=${result.videoId}`,
-              duration: "N/A",
+              duration: result.duration || "N/A",
+              durationMinutes: result.durationMinutes || null,
               description: result.description || "No description available",
+              channelTitle: result.channelTitle || null,
+              publishedAt: result.publishedAt || null,
             });
+
             playlists.push(playlistItem);
-            successCount++;
+            usedVideoIds.add(result.videoId);
+            usedTitles.add(result.title.toLowerCase());
           }
-        } catch (videoError) {
-          appLogger.warn(`Failed to search for video "${title}"`, {
-            error: videoError.message,
-            topic,
-            pointTitle,
-            ip: req.ip,
-          });
         }
       }
 
@@ -78,7 +153,7 @@ router.post(
         topic,
         pointTitle,
         totalRequested: videoTitles.length,
-        successCount,
+        successCount: playlists.length,
         processingTime: `${processingTime}ms`,
         ip: req.ip,
       });

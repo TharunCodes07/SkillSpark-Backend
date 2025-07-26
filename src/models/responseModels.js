@@ -1,5 +1,3 @@
-// Response models for type safety and consistency
-
 export class PointResponse {
   constructor(data) {
     this.id = data.id;
@@ -61,7 +59,10 @@ export class PlaylistItem {
     this.title = data.title;
     this.videoUrl = data.videoUrl;
     this.duration = data.duration || "N/A";
+    this.durationMinutes = data.durationMinutes || null;
     this.description = data.description;
+    this.channelTitle = data.channelTitle || null;
+    this.publishedAt = data.publishedAt || null;
   }
 }
 
@@ -72,7 +73,6 @@ export class PlaylistSuccessResponse {
   }
 }
 
-// Request validation helpers
 export const validateRoadmapRequest = (body) => {
   if (
     !body.topic ||
@@ -82,7 +82,6 @@ export const validateRoadmapRequest = (body) => {
     throw new Error("Topic is required and must be a non-empty string");
   }
 
-  // Validate userPreferences if provided
   let userPreferences = null;
   if (body.userPreferences) {
     const prefs = body.userPreferences;
@@ -99,7 +98,7 @@ export const validateRoadmapRequest = (body) => {
       !["Short", "Medium", "Long"].includes(prefs.videoLength)
     ) {
       throw new Error(
-        "Invalid videoLength preference. Must be 'Short', 'Medium', or 'Long'"
+        "Invalid videoLength preference. Must be 'Short' (8-15 min), 'Medium' (15-30 min), or 'Long' (30+ min)"
       );
     }
     userPreferences = {
@@ -133,7 +132,6 @@ export const validatePlaylistRequest = (body) => {
     throw new Error("Point title is required and must be a non-empty string");
   }
 
-  // Validate userPreferences if provided
   let userPreferences = null;
   if (body.userPreferences) {
     const prefs = body.userPreferences;
@@ -150,7 +148,7 @@ export const validatePlaylistRequest = (body) => {
       !["Short", "Medium", "Long"].includes(prefs.videoLength)
     ) {
       throw new Error(
-        "Invalid videoLength preference. Must be 'Short', 'Medium', or 'Long'"
+        "Invalid videoLength preference. Must be 'Short' (8-15 min), 'Medium' (15-30 min), or 'Long' (30+ min)"
       );
     }
     userPreferences = {

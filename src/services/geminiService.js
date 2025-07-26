@@ -99,25 +99,42 @@ class GeminiService {
     userPreferences = { depth: "Balanced", videoLength: "Medium" }
   ) {
     try {
-      // Map user preferences to video characteristics
       const videoLengthMapping = {
-        Short: { duration: "5-10 minutes", type: "quick tutorials or tips" },
-        Medium: { duration: "10-30 minutes", type: "comprehensive tutorials" },
+        Short: {
+          duration: "8-15 minutes",
+          type: "focused tutorials, quick guides, or essential concepts",
+          keywords: "tutorial, guide, explained, basics, intro, quick",
+        },
+        Medium: {
+          duration: "15-30 minutes",
+          type: "comprehensive tutorials with examples and practice",
+          keywords:
+            "complete guide, full tutorial, step by step, masterclass, course",
+        },
         Long: {
           duration: "30+ minutes",
-          type: "in-depth tutorials or courses",
+          type: "in-depth courses, complete walkthroughs, or project-based learning",
+          keywords:
+            "complete course, full project, masterclass, bootcamp, comprehensive",
         },
       };
 
       const depthMapping = {
-        Fast: { approach: "quick overview", complexity: "beginner-friendly" },
+        Fast: {
+          approach: "quick overview with key points",
+          complexity: "beginner-friendly with clear examples",
+          focus: "essential concepts and practical application",
+        },
         Balanced: {
-          approach: "balanced coverage",
-          complexity: "intermediate level",
+          approach: "thorough coverage with examples and practice",
+          complexity: "intermediate level with real-world scenarios",
+          focus: "balanced theory and hands-on practice",
         },
         Detailed: {
-          approach: "comprehensive deep-dive",
-          complexity: "detailed and thorough",
+          approach: "comprehensive deep-dive with advanced concepts",
+          complexity:
+            "detailed explanations with edge cases and best practices",
+          focus: "complete understanding with advanced techniques",
         },
       };
 
@@ -128,22 +145,41 @@ class GeminiService {
         depthMapping[userPreferences.depth] || depthMapping["Balanced"];
 
       const prompt = `
-        Generate a list of 3 real-sounding YouTube video titles for learning "${pointTitle}" in the context of "${topic}".
+        Generate 5 diverse and specific YouTube video titles for learning "${pointTitle}" in the context of "${topic}".
         
-        User preferences:
-        - Depth: ${userPreferences.depth} (${depth.approach}, ${depth.complexity})
-        - Video Length: ${userPreferences.videoLength} (${videoLength.duration}, ${videoLength.type})
+        Requirements:
+        - Each title should be UNIQUE and cover DIFFERENT ASPECTS of "${pointTitle}"
+        - Target ${videoLength.duration} videos (${videoLength.type})
+        - Approach: ${depth.approach}
+        - Focus: ${depth.focus}
+        - Include variety: ${videoLength.keywords}
         
-        Make the titles sound like they would be for ${videoLength.type} that provide a ${depth.approach} of the topic.
-        The titles should be realistic and appealing for YouTube videos.
+        Make titles that would attract videos with substantial content (minimum ${videoLength.duration}):
         
-        Only return the list in this format:
+        Examples of good title patterns:
+        - "Complete ${pointTitle} Tutorial for ${topic} - ${depth.complexity}"
+        - "${pointTitle} in ${topic}: ${depth.focus}"
+        - "Master ${pointTitle} for ${topic} Development - Full Course"
+        - "${topic} ${pointTitle}: ${depth.approach} with Examples"
+        - "Learn ${pointTitle} in ${topic} - ${videoLength.type}"
+        
+        Generate titles that are:
+        1. Specific to "${pointTitle}" and "${topic}"
+        2. Sound like real YouTube titles that would have ${videoLength.duration} content
+        3. Use different approaches (tutorial, course, guide, masterclass, etc.)
+        4. Include relevant keywords that indicate substantial content
+        5. Are diverse enough to return different videos when searched
+        
+        Return exactly 5 titles in this JSON format:
         [
-          "Video title 1",
-          "Video title 2",
-          "Video title 3"
+          "Title 1",
+          "Title 2", 
+          "Title 3",
+          "Title 4",
+          "Title 5"
         ]
-        Don't include anything else.
+        
+        No additional text, just the JSON array.
       `;
 
       const response = await this.ai.models.generateContent({
